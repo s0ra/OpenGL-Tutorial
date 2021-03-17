@@ -200,8 +200,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wglChoosePixelFormatARB(real_dc, pixel_format_attribs, 0, 1, &pixel_format, &num_formats);
     
     
-    MessageBoxA(0,(char*)glGetString(GL_VERSION), "OPENGL VERSION",0);
-    
     PIXELFORMATDESCRIPTOR pfd1;
     DescribePixelFormat(real_dc, pixel_format, sizeof(pfd1), &pfd1);
     SetPixelFormat(real_dc, pixel_format, &pfd1);

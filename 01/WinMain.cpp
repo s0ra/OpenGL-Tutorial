@@ -133,11 +133,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wc.lpszClassName = pClassName;
     wc.hIconSm = nullptr;
 	RegisterClassEx( &wc );
-	// create window instance
-	HWND hWnd = CreateWindowEx(0,pClassName, "Game Project", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, 200,200,1920, 1080, nullptr, nullptr, hInstance, nullptr);
-	// show the damn window
-    
-    //AllocConsole();
+    HWND hWnd = CreateWindowEx(0,pClassName, "Game Project", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, 200,200,1920, 1080, nullptr, nullptr, hInstance, nullptr);
     
     
     

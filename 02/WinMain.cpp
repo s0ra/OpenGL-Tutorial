@@ -8,9 +8,40 @@
 //#include <d3dcompiler.h>
 //#include <DirectXMath.h>
 //#include <dwrite.h>
+#include "glext.h"
 #include <wingdi.h>
-//#include "glext.h"
 #include <stdio.h>
+
+
+
+typedef HGLRC WINAPI wglCreateContextAttribsARB_type(HDC hdc, HGLRC hShareContext, const int *attribList);
+typedef bool WINAPI wglChoosePixelFormatARB_type(HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+
+wglChoosePixelFormatARB_type* wglChoosePixelFormatARB;
+wglCreateContextAttribsARB_type* wglCreateContextAttribsARB;
+
+PFNGLGENVERTEXARRAYSPROC glGenVertexArrays;
+PFNGLBINDVERTEXARRAYPROC glBindVertexArray;
+PFNGLGENBUFFERSPROC glGenBuffers;
+PFNGLBINDBUFFERPROC glBindBuffer;
+PFNGLBUFFERDATAPROC glBufferData;
+
+PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
+PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
+PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
+
+PFNGLCREATESHADERPROC glCreateShader;
+PFNGLSHADERSOURCEPROC glShaderSource;
+PFNGLCOMPILESHADERPROC glCompileShader;
+PFNGLCREATEPROGRAMPROC glCreateProgram;
+PFNGLATTACHSHADERPROC glAttachShader;
+PFNGLDETACHSHADERPROC glDetachShader;
+PFNGLLINKPROGRAMPROC glLinkProgram;
+PFNGLDELETESHADERPROC glDeleteShader;
+PFNGLUSEPROGRAMPROC glUseProgram;
+PFNGLDELETEPROGRAMPROC glDeleteProgram;
+
+typedef void (APIENTRY *PFNGLDRAWARRAYSPROC)(GLenum mode, GLint first, GLsizei count);
 
 // See https://www.opengl.org/registry/specs/ARB/wgl_create_context.txt for all values
 #define WGL_CONTEXT_MAJOR_VERSION_ARB             0x2091
@@ -19,12 +50,7 @@
 
 #define WGL_CONTEXT_CORE_PROFILE_BIT_ARB          0x00000001
 
-typedef HGLRC WINAPI wglCreateContextAttribsARB_type(HDC hdc, HGLRC hShareContext,
-                                                     const int *attribList);
-wglCreateContextAttribsARB_type *wglCreateContextAttribsARB;
 
-typedef bool WINAPI wglChoosePixelFormatARB_type(HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
-wglChoosePixelFormatARB_type *wglChoosePixelFormatARB;
 
 // See https://www.opengl.org/registry/specs/ARB/wgl_pixel_format.txt for all values
 #define WGL_DRAW_TO_WINDOW_ARB                    0x2001
@@ -38,6 +64,7 @@ wglChoosePixelFormatARB_type *wglChoosePixelFormatARB;
 
 #define WGL_FULL_ACCELERATION_ARB                 0x2027
 #define WGL_TYPE_RGBA_ARB                         0x202B
+
 
 
 bool up = false;
@@ -64,6 +91,20 @@ LRESULT CALLBACK WindowProc(HWND, UINT, WPARAM, LPARAM);
 
 void* GetAnyGLFuncAddress(const char *name);
 void ASSERT(bool, char*, HWND);
+
+const char* vertexShaderSource = "#version 330 core\n"
+"layout(location = 0) in vec3 vertexPosition_modelspace;\n"
+"void main()\n"
+"{\n"
+"  gl_Position.xyz = vertexPosition_modelspace;\n"
+"  gl_Position.w = 1.0;\n"
+"}\0";
+const char* fragmentShaderSource = "#version 330 core\n"
+"out vec3 color;\n"
+"void main()\n"
+"{\n"
+"  color = vec3(1,0,0);\n"
+"}\n\0";
 
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -108,10 +149,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     HGLRC dummy_context = wglCreateContext(dummy_dc);
     wglMakeCurrent(dummy_dc, dummy_context);
     
-    //wglGetProcAddress("wglCreateContextAttribsARB");
     wglChoosePixelFormatARB = (wglChoosePixelFormatARB_type*)GetAnyGLFuncAddress("wglChoosePixelFormatARB");
     wglCreateContextAttribsARB = (wglCreateContextAttribsARB_type*)GetAnyGLFuncAddress("wglCreateContextAttribsARB");
-    //wglGetProcAddress("wglChoosePixelFormatARB");
+    wglCreateContextAttribsARB = (wglCreateContextAttribsARB_type*)GetAnyGLFuncAddress("wglCreateContextAttribsARB");
+    
+    glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)GetAnyGLFuncAddress("glGenVertexArrays");
+    glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)GetAnyGLFuncAddress("glBindVertexArray");
+    glGenBuffers = (PFNGLGENBUFFERSPROC)GetAnyGLFuncAddress("glGenBuffers");
+    glBindBuffer = (PFNGLBINDBUFFERPROC)GetAnyGLFuncAddress("glBindBuffer");
+    glBufferData = (PFNGLBUFFERDATAPROC)GetAnyGLFuncAddress("glBufferData");
+    
+    glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC) GetAnyGLFuncAddress("glEnableVertexAttribArray");
+    glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC) GetAnyGLFuncAddress("glVertexAttribPointer");
+    glDisableVertexAttribArray = (PFNGLDISABLEVERTEXATTRIBARRAYPROC) GetAnyGLFuncAddress("glDisableVertexAttribArray");
+    glCreateShader = (PFNGLCREATESHADERPROC) GetAnyGLFuncAddress("glCreateShader");
+    glShaderSource = (PFNGLSHADERSOURCEPROC) GetAnyGLFuncAddress("glShaderSource");
+    glCompileShader = (PFNGLCOMPILESHADERPROC) GetAnyGLFuncAddress("glCompileShader");
+    glCreateProgram = (PFNGLCREATEPROGRAMPROC) GetAnyGLFuncAddress("glCreateProgram");
+    glAttachShader = (PFNGLATTACHSHADERPROC) GetAnyGLFuncAddress("glAttachShader");
+    glDetachShader = (PFNGLDETACHSHADERPROC) GetAnyGLFuncAddress("glDetachShader");
+    glLinkProgram = (PFNGLLINKPROGRAMPROC) GetAnyGLFuncAddress("glLinkProgram");
+    glDeleteShader = (PFNGLDELETESHADERPROC) GetAnyGLFuncAddress("glDeleteShader");
+    glUseProgram = (PFNGLUSEPROGRAMPROC) GetAnyGLFuncAddress("glUseProgram");
+    glDeleteProgram = (PFNGLDELETEPROGRAMPROC) GetAnyGLFuncAddress("glDeleteProgram");
     
     wglMakeCurrent(dummy_dc, 0);
     wglDeleteContext(dummy_context);
@@ -193,6 +253,45 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     
     
+    GLuint vertexbuffer;
+    static const GLfloat g_vertex_buffer_data[] = {
+        -1.0f, -1.0f, 0.0f,
+        1.0f, -1.0f, 0.0f,
+        0.0f,  1.0f, 0.0f,
+    };
+    
+    GLuint vertexArray;
+	glGenVertexArrays(1, &vertexArray);
+	glBindVertexArray(vertexArray);
+    
+    // Generate 1 buffer, put the resulting identifier in vertexbuffer
+    glGenBuffers(1, &vertexbuffer);
+    
+    // The following commands will talk about our 'vertexbuffer' buffer
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    
+    // Give our vertices to OpenGL.
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+    
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+    
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+    
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+    
+    glDetachShader(shaderProgram, vertexShader);
+	glDetachShader(shaderProgram, fragmentShader);
+    
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    
     LARGE_INTEGER StartingTime, EndingTime, ticks;
     LARGE_INTEGER Frequency;
     
@@ -212,8 +311,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             QueryPerformanceFrequency(&Frequency);
             QueryPerformanceCounter(&StartingTime);
             
-            
-            
             QueryPerformanceCounter(&EndingTime);
             ticks.QuadPart += ((EndingTime.QuadPart - StartingTime.QuadPart) * 1000000) / Frequency.QuadPart;
         }
@@ -221,9 +318,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
+        glUseProgram(shaderProgram);
+        
+        // 1rst attribute buffer : vertices
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        // Draw the triangle !
+        glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
+        glDisableVertexAttribArray(0);
+        
         SwapBuffers(real_dc);
     }
     
+    glDeleteProgram(shaderProgram);
     wglMakeCurrent (NULL, NULL) ; 
     wglDeleteContext (gl33_context);
     
@@ -371,6 +479,7 @@ void* GetAnyGLFuncAddress(const char *name)
        (p == (void*)0x1) || (p == (void*)0x2) || (p == (void*)0x3) ||
        (p == (void*)-1) )
     {
+        printf(name);
         HMODULE module = LoadLibraryA("opengl32.dll");
         p =  (void *)GetProcAddress(module, name);
     }

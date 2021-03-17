@@ -77,19 +77,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     RegisterClassA(&window_class);
     
-    HWND dummy_window = CreateWindowExA(
-                                        0,
-                                        window_class.lpszClassName,
-                                        "Dummy OpenGL Window",
-                                        0,
-                                        CW_USEDEFAULT,
-                                        CW_USEDEFAULT,
-                                        CW_USEDEFAULT,
-                                        CW_USEDEFAULT,
-                                        0,
-                                        0,
-                                        window_class.hInstance,
-                                        0);
+    HWND dummy_window = CreateWindowExA(0, window_class.lpszClassName, "Dummy OpenGL Window", 0, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, 0, 0, window_class.hInstance, 0);
     PIXELFORMATDESCRIPTOR pfd = {0};
     pfd.nSize = sizeof(pfd);
     pfd.nVersion = 1;
@@ -130,10 +118,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ReleaseDC(dummy_window, dummy_dc);
     DestroyWindow(dummy_window);
     
-    
-    
-    
-	const auto pClassName = "hw3dgame";
+    const auto pClassName = "hw3dgame";
 	// register window class
 	WNDCLASSEX wc = { 0 };
 	wc.cbSize = sizeof( wc );
@@ -150,13 +135,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	wc.hIconSm = nullptr;
 	RegisterClassEx( &wc );
 	// create window instance
-	HWND hWnd = CreateWindowEx(
-                               0,pClassName,
-                               "Game Project",
-                               WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-                               200,200,1920, 1080,
-                               nullptr,nullptr,hInstance,nullptr
-                               );
+	HWND hWnd = CreateWindowEx(0,pClassName, "Game Project", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, 200,200,1920, 1080, nullptr, nullptr, hInstance, nullptr);
 	// show the damn window
     
     //AllocConsole();
@@ -205,7 +184,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     SetPixelFormat(real_dc, pixel_format, &pfd1);
     
     // Specify that we want to create an OpenGL 3.3 core profile context
-    int gl33_attribs[] = {
+    int gl33_attribs[] =
+    {
         WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
         WGL_CONTEXT_MINOR_VERSION_ARB, 3,
         WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,

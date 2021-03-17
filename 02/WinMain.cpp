@@ -223,7 +223,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         WGL_STENCIL_BITS_ARB, 8, 0
     };
     
-	ShowWindow(hWnd,SW_SHOW);
+    ShowWindow(hWnd,SW_SHOW);
     
     HDC real_dc = GetDC(hWnd);
     
@@ -261,8 +261,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     };
     
     GLuint vertexArray;
-	glGenVertexArrays(1, &vertexArray);
-	glBindVertexArray(vertexArray);
+    glGenVertexArrays(1, &vertexArray);
+    glBindVertexArray(vertexArray);
     
     // Generate 1 buffer, put the resulting identifier in vertexbuffer
     glGenBuffers(1, &vertexbuffer);
@@ -287,7 +287,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     glLinkProgram(shaderProgram);
     
     glDetachShader(shaderProgram, vertexShader);
-	glDetachShader(shaderProgram, fragmentShader);
+    glDetachShader(shaderProgram, fragmentShader);
     
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);

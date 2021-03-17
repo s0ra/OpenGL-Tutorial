@@ -119,20 +119,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     DestroyWindow(dummy_window);
     
     const auto pClassName = "hw3dgame";
-	// register window class
-	WNDCLASSEX wc = { 0 };
-	wc.cbSize = sizeof( wc );
-	wc.style = CS_OWNDC;
-	wc.lpfnWndProc = WindowProc;
-	wc.cbClsExtra = 0;
-	wc.cbWndExtra = 0;
-	wc.hInstance = hInstance;
-	wc.hIcon = nullptr;
-	wc.hCursor = nullptr;
-	wc.hbrBackground = nullptr;
-	wc.lpszMenuName = nullptr;
-	wc.lpszClassName = pClassName;
-	wc.hIconSm = nullptr;
+    WNDCLASSEX wc = { 0 };
+    wc.cbSize = sizeof( wc );
+    wc.style = CS_OWNDC;
+    wc.lpfnWndProc = WindowProc;
+    wc.cbClsExtra = 0;
+    wc.cbWndExtra = 0;
+    wc.hInstance = hInstance;
+    wc.hIcon = nullptr;
+    wc.hCursor = nullptr;
+    wc.hbrBackground = nullptr;
+    wc.lpszMenuName = nullptr;
+    wc.lpszClassName = pClassName;
+    wc.hIconSm = nullptr;
 	RegisterClassEx( &wc );
 	// create window instance
 	HWND hWnd = CreateWindowEx(0,pClassName, "Game Project", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, 200,200,1920, 1080, nullptr, nullptr, hInstance, nullptr);
@@ -156,16 +155,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     
     // Now we can choose a pixel format the modern way, using wglChoosePixelFormatARB.
-    int pixel_format_attribs[] = {
-        WGL_DRAW_TO_WINDOW_ARB,     GL_TRUE,
-        WGL_SUPPORT_OPENGL_ARB,     GL_TRUE,
-        WGL_DOUBLE_BUFFER_ARB,      GL_TRUE,
-        WGL_ACCELERATION_ARB,       WGL_FULL_ACCELERATION_ARB,
-        WGL_PIXEL_TYPE_ARB,         WGL_TYPE_RGBA_ARB,
-        WGL_COLOR_BITS_ARB,         32,
-        WGL_DEPTH_BITS_ARB,         24,
-        WGL_STENCIL_BITS_ARB,       8,
-        0
+    int pixel_format_attribs[] =
+    {
+        WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+        WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+        WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
+        WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
+        WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB, 
+        WGL_COLOR_BITS_ARB, 32, 
+        WGL_DEPTH_BITS_ARB, 24, 
+        WGL_STENCIL_BITS_ARB, 8, 0
     };
     
 	ShowWindow(hWnd,SW_SHOW);

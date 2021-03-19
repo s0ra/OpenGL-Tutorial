@@ -9,7 +9,7 @@
 //#include <DirectXMath.h>
 //#include <dwrite.h>
 #include "glext.h"
-#include <wingdi.h>
+//#include <wingdi.h>
 #include <stdio.h>
 
 

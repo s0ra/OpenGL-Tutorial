@@ -271,15 +271,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     };
     
     GLfloat model[4][4] = {
-        {1.0f, 0.0f, 0.0f, 0.0f},
-        {0.0f, 1.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 1.0f, 0.0f},
+        {100.0f, 0.0f, 0.0f, 0.0f},
+        {0.0f, 100.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 100.0f, 0.0f},
         {0.0f, 0.0f, 0.0f, 1.0f}
     };
     
-    model[3][0] = -0.5f;
-    model[3][1] = -0.5f;
-    model[3][2] = -0.5f;
+    
+    model[3][0] = -50.0f;
+    model[3][1] = -50.0f;
+    //model[3][2] = -0.5f;
+    
+    //model[0][3] = -50.0f;
+    //model[1][3] = -50.0f;
+    //model[2][3] = -5.0f;
+    
     
     float b = 0.0f;
     float t = 0.0f;
@@ -288,45 +294,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     float n = 0.0f;
     float f = 0.0f;
     
-    /*
-    n = 0.1f;
-    f = 50.0f;
-    r = 1000.0f / (16.0f/9.0f);
-    t = 1000.0f;
+    
+    n = 0.01f;
+    f = 1000.0f;
+    r = 1920.0f;
+    t = 1080.0f;
     
     l = -r;
     b = -t;
     
-    
-    
     projection[0][0] = 2.0f / (r - l); 
-    projection[0][1] = 0; 
-    projection[0][2] = 0; 
-    projection[0][3] = 0; 
+    projection[1][1] = 2.0f / (t - b);
+    projection[2][2] = -2.0f / (f - n);
     
-    projection[1][0] = 0; 
-    projection[1][1] = 2.0f / (t - b); 
-    projection[1][2] = 0; 
-    projection[1][3] = 0; 
     
-    projection[2][0] = 0; 
-    projection[2][1] = 0; 
-    projection[2][2] = -2.0f / (f - n); 
-    projection[2][3] = 0; 
-    
-    projection[3][0] = -(r + l) / (r - l); 
-    projection[3][1] = -(t + b) / (t - b); 
-    projection[3][2] = -(f + n) / (f - n); 
-    projection[3][3] = 1.0f; 
-    
-    */
+    projection[0][3] = -(r + l) / (r - l);
+    projection[1][3] = -(t + b) / (t - b);
+    projection[2][3] = -(f + n) / (f - n);
+    projection[3][3] = 1.0f;
     
     GLuint vertexbuffer;
     static const GLfloat g_vertex_buffer_data[] = {
+        0.0f, 0.0f, 0.0f,
+        1.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.0f,
-        1.0f, 0.0f, 1.0f
+        1.0f, 1.0f, 0.0f
     };
     
     GLuint vertexArray;
@@ -387,6 +379,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             
             QueryPerformanceCounter(&EndingTime);
             ticks.QuadPart += ((EndingTime.QuadPart - StartingTime.QuadPart) * 1000000) / Frequency.QuadPart;
+        }
+        
+        if (up)
+        {
+            up = false;
+            model[3][1] += 1.0f;
+        }
+        else if (down)
+        {
+            down = false;
+            model[3][1] -= 1.0f;
         }
         
         glClearColor(0.5f, 0.5f, 0.5f, 1.0f);

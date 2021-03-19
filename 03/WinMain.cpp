@@ -533,8 +533,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         
         case WM_PAINT:
         {
-            BeginPaint(hWnd, &ps);
-            EndPaint(hWnd, &ps);
+            //BeginPaint(hWnd, &ps);
+            //EndPaint(hWnd, &ps);
             break;
         }
         

@@ -44,6 +44,9 @@ PFNGLDELETEPROGRAMPROC glDeleteProgram;
 PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
 PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
 
+PFNGLDRAWARRAYSINSTANCEDPROC glDrawArraysInstanced;
+PFNGLVERTEXATTRIBDIVISORPROC glVertexAttribDivisor;
+
 typedef void (APIENTRY *PFNGLDRAWARRAYSPROC)(GLenum mode, GLint first, GLsizei count);
 
 // See https://www.opengl.org/registry/specs/ARB/wgl_create_context.txt for all values
@@ -97,12 +100,13 @@ void ASSERT(bool, char*, HWND);
 
 const char* vertexShaderSource = "#version 330 core\n"
 "layout(location = 0) in vec3 vertexPosition_modelspace;\n"
+"layout(location = 1) in vec2 offset;\n"
 "uniform mat4 view;\n"
 "uniform mat4 model;\n"
 "uniform mat4 projection;\n"
 "void main()\n"
 "{\n"
-"  gl_Position = projection * view * model * vec4(vertexPosition_modelspace, 1.0);\n"
+"  gl_Position = projection * view * model * vec4(vertexPosition_modelspace+vec3(offset, 0.0), 1.0);\n"
 //"  gl_Position = model * vec4(vertexPosition_modelspace, 0.0);\n"
 //"  gl_Position = vec4(vertexPosition_modelspace, 1.0);\n"
 "}\0";
@@ -180,6 +184,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     glUseProgram = (PFNGLUSEPROGRAMPROC) GetAnyGLFuncAddress("glUseProgram");
     glDeleteProgram = (PFNGLDELETEPROGRAMPROC) GetAnyGLFuncAddress("glDeleteProgram");
     glGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC) GetAnyGLFuncAddress("glGetUniformLocation"); glUniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC) GetAnyGLFuncAddress("glUniformMatrix4fv");
+    glDrawArraysInstanced = (PFNGLDRAWARRAYSINSTANCEDPROC) GetAnyGLFuncAddress("glDrawArraysInstanced");
+    glVertexAttribDivisor = (PFNGLVERTEXATTRIBDIVISORPROC) GetAnyGLFuncAddress("glVertexAttribDivisor");
     
     wglMakeCurrent(dummy_dc, 0);
     wglDeleteContext(dummy_context);
@@ -315,6 +321,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     projection[2][3] = -(f + n) / (f - n);
     projection[3][3] = 1.0f;
     
+    float position[10][10][2] = {0};
+    
+    for (int i = 0; i < 10; i++)
+    {
+        for (int j = 0; j < 10; j++)
+        {
+            position[i][j][0] = j * 1.1;
+            position[i][j][1] = i * 1.1;
+        }
+    }
     
     GLuint vertexbuffer;
     static const GLfloat g_vertex_buffer_data[] = {
@@ -335,7 +351,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
     
     // Give our vertices to OpenGL.
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(float)*12, g_vertex_buffer_data, GL_STATIC_DRAW);
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    GLuint instanceBuffer;
+    glGenBuffers(1, &instanceBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(position), position, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
@@ -359,7 +383,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     GLuint shaderModel = glGetUniformLocation(shaderProgram, "model");
     GLuint shaderView = glGetUniformLocation(shaderProgram, "view");
     GLuint shaderProjection = glGetUniformLocation(shaderProgram, "projection");
-    
     
     LARGE_INTEGER StartingTime, EndingTime, ticks;
     LARGE_INTEGER Frequency;
@@ -412,12 +435,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         
         // 1rst attribute buffer : vertices
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-        // Draw the triangle !
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Starting from vertex 0; 3 vertices total -> 1 triangle
-        glDisableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
         
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glVertexAttribDivisor(1, 1);
+        
+        // Draw the triangle !
+        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, 100); // Starting from vertex 0; 3 vertices total -> 1 triangle
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
         SwapBuffers(real_dc);
     }
     

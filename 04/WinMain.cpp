@@ -11,7 +11,8 @@
 #include "glext.h"
 //#include <wingdi.h>
 #include <stdio.h>
-
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 
 typedef HGLRC WINAPI wglCreateContextAttribsARB_type(HDC hdc, HGLRC hShareContext, const int *attribList);
@@ -46,6 +47,12 @@ PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
 
 PFNGLDRAWARRAYSINSTANCEDPROC glDrawArraysInstanced;
 PFNGLVERTEXATTRIBDIVISORPROC glVertexAttribDivisor;
+
+PFNGLUNIFORM1IPROC glUniform1i;
+PFNGLGENERATEMIPMAPPROC glGenerateMipmap;
+
+PFNGLACTIVETEXTUREPROC glActiveTexture;
+
 
 typedef void (APIENTRY *PFNGLDRAWARRAYSPROC)(GLenum mode, GLint first, GLsizei count);
 
@@ -99,22 +106,26 @@ void* GetAnyGLFuncAddress(const char *name);
 void ASSERT(bool, char*, HWND);
 
 const char* vertexShaderSource = "#version 330 core\n"
+
 "layout(location = 0) in vec3 vertexPosition_modelspace;\n"
-"layout(location = 1) in vec2 offset;\n"
+"layout(location = 1) in vec2 texCoords;\n"
+"layout(location = 2) in vec2 offset;\n"
 "uniform mat4 view;\n"
 "uniform mat4 model;\n"
 "uniform mat4 projection;\n"
+"out vec2 TexCoord;\n"
 "void main()\n"
 "{\n"
-"  gl_Position = projection * view * model * vec4(vertexPosition_modelspace+vec3(offset, 0.0), 1.0);\n"
-//"  gl_Position = model * vec4(vertexPosition_modelspace, 0.0);\n"
-//"  gl_Position = vec4(vertexPosition_modelspace, 1.0);\n"
+"  TexCoord = texCoords + ((offset)/640.0);\n"
+"  gl_Position = projection * view * model * vec4(vertexPosition_modelspace+vec3(offset*1.1, 0.0), 1.0);\n"
 "}\0";
 const char* fragmentShaderSource = "#version 330 core\n"
-"out vec3 color;\n"
+"out vec4 FragColor;\n"
+"in vec2 TexCoord;\n"
+"uniform sampler2D texture1;\n"
 "void main()\n"
 "{\n"
-"  color = vec3(1,0,0);\n"
+"  FragColor = texture(texture1, TexCoord);\n"
 "}\n\0";
 
 
@@ -186,6 +197,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     glGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC) GetAnyGLFuncAddress("glGetUniformLocation"); glUniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC) GetAnyGLFuncAddress("glUniformMatrix4fv");
     glDrawArraysInstanced = (PFNGLDRAWARRAYSINSTANCEDPROC) GetAnyGLFuncAddress("glDrawArraysInstanced");
     glVertexAttribDivisor = (PFNGLVERTEXATTRIBDIVISORPROC) GetAnyGLFuncAddress("glVertexAttribDivisor");
+    glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC) GetAnyGLFuncAddress("glGenerateMipmap");
+    glUniform1i = (PFNGLUNIFORM1IPROC) GetAnyGLFuncAddress("glUniform1i");
+    glActiveTexture = (PFNGLACTIVETEXTUREPROC) GetAnyGLFuncAddress("glActiveTexture");
     
     wglMakeCurrent(dummy_dc, 0);
     wglDeleteContext(dummy_context);
@@ -277,9 +291,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     };
     
     GLfloat model[4][4] = {
-        {64.0f, 0.0f, 0.0f, 0.0f},
-        {0.0f, 64.0f, 0.0f, 0.0f},
-        {0.0f, 0.0f, 64.0f, 0.0f},
+        {1.0f, 0.0f, 0.0f, 0.0f},
+        {0.0f, 1.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 1.0f, 0.0f},
         {0.0f, 0.0f, 0.0f, 1.0f}
     };
     
@@ -327,17 +341,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     {
         for (int j = 0; j < 10; j++)
         {
-            position[i][j][0] = j * 1.1;
-            position[i][j][1] = i * 1.1;
+            position[i][j][0] = j * 64;
+            position[i][j][1] = i * 64;
         }
     }
     
     GLuint vertexbuffer;
     static const GLfloat g_vertex_buffer_data[] = {
-        0.0f, 0.0f, 0.0f,
-        1.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        1.0f, 1.0f, 0.0f
+        0.0f, 0.0f, 0.0f,    0.0f, 0.0f,
+        64.0f, 0.0f, 0.0f,   0.1f, 0.0f,
+        0.0f, 64.0f, 0.0f,   0.0f, 0.1f,
+        64.0f, 64.0f, 0.0f,  0.1f, 0.1f
     };
     
     GLuint vertexArray;
@@ -345,7 +359,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     glBindVertexArray(vertexArray);
     
     // Generate 1 buffer, put the resulting identifier in vertexbuffer
-    glGenBuffers(1, &vertexbuffer);
+    glGenBuffers(2, &vertexbuffer);
     
     // The following commands will talk about our 'vertexbuffer' buffer
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -353,7 +367,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // Give our vertices to OpenGL.
     //glBufferData(GL_ARRAY_BUFFER, sizeof(float)*12, g_vertex_buffer_data, GL_STATIC_DRAW);
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     GLuint instanceBuffer;
     glGenBuffers(1, &instanceBuffer);
@@ -383,6 +396,30 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     GLuint shaderModel = glGetUniformLocation(shaderProgram, "model");
     GLuint shaderView = glGetUniformLocation(shaderProgram, "view");
     GLuint shaderProjection = glGetUniformLocation(shaderProgram, "projection");
+    
+    
+    GLuint spritesheet;
+    glGenTextures(1, &spritesheet);
+    glBindTexture(GL_TEXTURE_2D, spritesheet);
+    
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    
+    int width, height, nrChannels;
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char* data = stbi_load("Texture.png", &width, &height, &nrChannels, 0);
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
+    
+    glUseProgram(shaderProgram);
+    glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 0);
+    
     
     LARGE_INTEGER StartingTime, EndingTime, ticks;
     LARGE_INTEGER Frequency;
@@ -429,25 +466,34 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         
         glUseProgram(shaderProgram);
         
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, spritesheet);
+        
+        glUseProgram(shaderProgram);
+        
         glUniformMatrix4fv(shaderModel, 1, GL_FALSE, &model[0][0]);
         glUniformMatrix4fv(shaderView, 1, GL_FALSE, &view[0][0]);
         glUniformMatrix4fv(shaderProjection, 1, GL_FALSE, &projection[0][0]);
         
         // 1rst attribute buffer : vertices
-        glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
         
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*5, (void*)0);
         glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float)*5, (void*)(sizeof(float)*3));
+        
+        glEnableVertexAttribArray(2);
         glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glVertexAttribDivisor(1, 1);
+        glVertexAttribDivisor(2, 1);
         
         // Draw the triangle !
         glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, 100); // Starting from vertex 0; 3 vertices total -> 1 triangle
         glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
+        //glDisableVertexAttribArray(1);
+        glDisableVertexAttribArray(2);
         SwapBuffers(real_dc);
     }
     
